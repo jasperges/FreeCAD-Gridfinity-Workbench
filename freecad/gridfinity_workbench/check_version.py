@@ -15,7 +15,7 @@ def check_object_version(obj: fc.DocumentObject) -> bool:
     return str(getattr(obj, "version", "")) == __version__
 
 
-def migrate_object_version(obj: fc.DocumentObject) -> None:  # noqa: C901
+def migrate_object_version(obj: fc.DocumentObject) -> None:  # noqa: C901, PLR0912
     """Update an object from an older version to the current version.
 
     This function will check the version of the object against the current
@@ -92,6 +92,16 @@ def migrate_object_version(obj: fc.DocumentObject) -> None:  # noqa: C901
             obj.MagnetHolesShape = const.BIN_HOLE_SHAPES
             obj.MagnetHolesShape = hole_shape
             magnet_hole.add_hole_size_storage_properties(obj)
+
+        # v0.12.5: OnlyCorners property was added for bins.
+        if hasattr(obj, "ScrewHoles") and not hasattr(obj, "OnlyCorners"):
+            obj.addProperty(
+                "App::PropertyBool",
+                "OnlyCorners",
+                "Gridfinity",
+                "Only put magnet and screw holes in the outer corners of the bin,"
+                " to save print time",
+            ).OnlyCorners = const.ONLY_CORNERS
 
     # Update the version property to the current version after updating the object.
     obj.version = __version__

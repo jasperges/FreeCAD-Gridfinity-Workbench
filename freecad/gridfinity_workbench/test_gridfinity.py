@@ -159,6 +159,15 @@ class TestVolumes(TestWithDocument):
         self.assertEqual(len(obj.Shape.Solids), 1)
         self.assertAlmostEqual(obj.Shape.Volume, 287015.68593231344)
 
+    def test_bin_blank_only_corners(self) -> None:
+        fcg.Command.get("CreateBinBlank").run()
+        obj = fcg.ActiveDocument.ActiveObject.Object
+        obj.OnlyCorners = True
+        obj.recompute()
+        self.assertTrue(obj.Shape.isValid())
+        self.assertEqual(len(obj.Shape.Solids), 1)
+        self.assertAlmostEqual(obj.Shape.Volume, 288597.58190321736)
+
     def test_bin_refined_holes_size_per_shape(self) -> None:
         fcg.Command.get("CreateBinBlank").run()
         obj = fcg.ActiveDocument.ActiveObject.Object

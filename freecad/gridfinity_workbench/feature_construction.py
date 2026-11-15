@@ -1064,6 +1064,13 @@ def bin_bottom_holes_properties(obj: fc.DocumentObject, *, magnet_holes_default:
         "Toggle the screw holes on or off",
     ).ScrewHoles = const.SCREW_HOLES
 
+    obj.addProperty(
+        "App::PropertyBool",
+        "OnlyCorners",
+        "Gridfinity",
+        "Only put magnet and screw holes in the outer corners of the bin, to save print time",
+    ).OnlyCorners = const.ONLY_CORNERS
+
     ## Gridfinity Non Standard Parameters
     obj.addProperty(
         "App::PropertyLength",
@@ -1163,12 +1170,68 @@ def make_bin_bottom_holes(
         )
         shape = shape.fuse(remove_channel)
 
-    shape = utils.copy_in_layout(shape, layout, obj.xGridSize, obj.yGridSize)
+    if obj.OnlyCorners:
+        shape = _copy_to_outer_corners(obj, shape, layout)
+    else:
+        shape = utils.copy_in_layout(shape, layout, obj.xGridSize, obj.yGridSize)
     shape.translate(
         fc.Vector(obj.xGridSize / 2 - obj.xLocationOffset, obj.yGridSize / 2 - obj.yLocationOffset),
     )
 
     return shape
+
+
+def _outer_corners(layout: GridfinityLayout, x: int, y: int) -> list[tuple[int, int]]:
+    """Get the corners of a layout cell that are outer corners of the layout.
+
+    A corner is an outer corner when there is no neighbouring cell on either side of it.
+    Returns the corners as (x, y) directions, for example (1, -1) for the bottom right corner.
+    """
+
+    def filled(i: int, j: int) -> bool:
+        return 0 <= i < len(layout) and 0 <= j < len(layout[i]) and layout[i][j]
+
+    return [
+        (sx, sy)
+        for sx in (-1, 1)
+        for sy in (-1, 1)
+        if not filled(x + sx, y) and not filled(x, y + sy)
+    ]
+
+
+def _copy_to_outer_corners(
+    obj: fc.DocumentObject,
+    shape: Part.Shape,
+    layout: GridfinityLayout,
+) -> Part.Shape:
+    """Copy the holes of a single grid cell, only keeping the holes at the outer corners."""
+    x_half = obj.xGridSize / 2
+    y_half = obj.yGridSize / 2
+    bb = shape.BoundBox
+
+    shapes = []
+    for x, col in enumerate(layout):
+        for y, cell in enumerate(col):
+            corners = _outer_corners(layout, x, y) if cell else []
+            if not corners:
+                continue
+            quadrants = utils.multi_fuse(
+                [
+                    Part.makeBox(
+                        x_half,
+                        y_half,
+                        bb.ZLength + 2,
+                        fc.Vector(min(sx, 0) * x_half, min(sy, 0) * y_half, bb.ZMin - 1),
+                    )
+                    for sx, sy in corners
+                ],
+            )
+            shapes.append(
+                shape.common(quadrants).translate(
+                    fc.Vector(x * obj.xGridSize, y * obj.yGridSize),
+                ),
+            )
+    return utils.multi_fuse(shapes)
 
 
 def calc_stacking_lip_offset(obj: fc.DocumentObject) -> fc.Units.Quantity:
