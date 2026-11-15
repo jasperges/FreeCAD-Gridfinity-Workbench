@@ -2,7 +2,7 @@
 
 import FreeCAD as fc  # noqa: N813
 
-from . import const
+from . import const, magnet_hole
 from .version import __version__
 
 
@@ -83,6 +83,15 @@ def migrate_object_version(obj: fc.DocumentObject) -> None:  # noqa: C901
                 "Gridfinity",
                 "Number of grid units in the y direction <br> <br> default = 2",
             ).yGridUnits = float(ygridunits or const.Y_GRID_UNITS)
+
+    if versiontuple(obj.version) < versiontuple("0.12.5"):
+        migrated = True
+        # v0.12.5: "Refined" magnet hole shape was added for bins (bins have screw holes).
+        if hasattr(obj, "ScrewHoles") and hasattr(obj, "MagnetHolesShape"):
+            hole_shape = obj.MagnetHolesShape
+            obj.MagnetHolesShape = const.BIN_HOLE_SHAPES
+            obj.MagnetHolesShape = hole_shape
+            magnet_hole.add_hole_size_storage_properties(obj)
 
     # Update the version property to the current version after updating the object.
     obj.version = __version__

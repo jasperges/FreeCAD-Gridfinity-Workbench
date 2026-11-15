@@ -21,6 +21,17 @@ SCREW_HOLE_DEPTH = 6
 MAGNET_HOLE_DISTANCE_FROM_EDGE = 8
 
 HOLE_SHAPES = ["Round", "Crush ribs", "Hex"]
+BIN_HOLE_SHAPES = [*HOLE_SHAPES, "Refined"]
+
+# Gridfinity Refined magnet holes (magnet slides in from the side, held by friction)
+# Values from gridfinity-rebuilt-openscad (standard.scad)
+LAYER_HEIGHT = 0.2
+MAGNET_HEIGHT = 2
+REFINED_HOLE_DIAMETER = 5.86
+REFINED_HOLE_HEIGHT = MAGNET_HEIGHT - 0.1
+REFINED_HOLE_BOTTOM_LAYERS = 2
+# For refined holes the magnet hole depth is the height of the magnet slot
+REFINED_HOLE_DEPTH = REFINED_HOLE_HEIGHT
 
 ## Bins
 # General Bin Parameters

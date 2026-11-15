@@ -8,7 +8,7 @@ import FreeCAD as fc  # noqa: N813
 import Part
 
 from . import baseplate_feature_construction as baseplate_feat
-from . import check_version, const, grid_initial_layout, label_shelf, utils
+from . import check_version, const, grid_initial_layout, label_shelf, magnet_hole, utils
 from . import feature_construction as feat
 from .custom_shape_features import (
     clean_up_layout,
@@ -38,6 +38,9 @@ class FoundationGridfinity:
 
     def onDocumentRestored(self, obj: fc.DocumentObject) -> None:  # noqa: N802
         check_version.migrate_object_version(obj)
+
+    def onChanged(self, obj: fc.DocumentObject, prop: str) -> None:  # noqa: N802
+        magnet_hole.on_changed(obj, prop)
 
     def execute(self, fp: Part.Feature) -> None:
         gridfinity_shape = self.generate_gridfinity_shape(fp)

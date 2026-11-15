@@ -788,11 +788,11 @@ def make_eco_compartments(
     magoffset = zeromm
     tp_chf_offset = zeromm
     if obj.MagnetHoles:
-        magoffset = obj.MagnetHoleDepth
-        if (obj.MagnetHoleDepth + obj.BaseWallThickness) > (
+        magoffset = magnet_hole_module.depth_from_bottom(obj)
+        if (magoffset + obj.BaseWallThickness) > (
             obj.BaseProfileBottomChamfer + obj.BaseProfileVerticalSection + base_offset
         ):
-            tp_chf_offset = (obj.MagnetHoleDepth + obj.BaseWallThickness) - (
+            tp_chf_offset = (magoffset + obj.BaseWallThickness) - (
                 obj.BaseProfileBottomChamfer + obj.BaseProfileVerticalSection + base_offset
             )
 
@@ -1053,6 +1053,7 @@ def bin_bottom_holes_properties(obj: fc.DocumentObject, *, magnet_holes_default:
         remove_channel=True,
         chamfer=False,
         magnet_holes_default=magnet_holes_default,
+        refined=True,
     )
 
     ## Gridfinity Parameters
@@ -1129,20 +1130,34 @@ def make_bin_bottom_holes(
     layout: GridfinityLayout,
 ) -> Part.Shape:
     """Make bin bottom holes."""
+    refined_holes = obj.MagnetHoles and obj.MagnetHolesShape == "Refined"
+    magnet_holes = obj.MagnetHoles and not refined_holes
+
     shapes = []
-    if obj.MagnetHoles:
+    if magnet_holes:
         shapes.append(magnet_hole_module.from_obj(obj))
     if obj.ScrewHoles:
         shapes.append(Part.makeCylinder(obj.ScrewHoleDiameter / 2, obj.ScrewHoleDepth))
-    if obj.ScrewHoles and obj.MagnetHoles:
+    if obj.ScrewHoles and magnet_holes:
         shapes.append(_make_holes_interface(obj))
-    shape = utils.multi_fuse(shapes)
 
     x_pos = obj.xGridSize / 2 - obj.MagnetHoleDistanceFromEdge
     y_pos = obj.yGridSize / 2 - obj.MagnetHoleDistanceFromEdge
-    shape = utils.copy_and_translate(shape, utils.corners(x_pos, y_pos, -obj.TotalHeight))
+    corner_shapes = []
+    if shapes:
+        corner_shapes.append(
+            utils.copy_and_translate(
+                utils.multi_fuse(shapes),
+                utils.corners(x_pos, y_pos, -obj.TotalHeight),
+            ),
+        )
+    if refined_holes:
+        corner_shapes.append(
+            magnet_hole_module.refined_holes(obj).translate(fc.Vector(0, 0, -obj.TotalHeight)),
+        )
+    shape = utils.multi_fuse(corner_shapes)
 
-    if obj.MagnetHoles and obj.MagnetRemoveChannel:
+    if magnet_holes and obj.MagnetRemoveChannel:
         remove_channel = magnet_hole_module.remove_channel(obj).translate(
             fc.Vector(0, 0, -obj.TotalHeight),
         )

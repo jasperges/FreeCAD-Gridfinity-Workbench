@@ -20,6 +20,28 @@ if TYPE_CHECKING:
 GridfinityLayout = list[list[bool]]
 
 
+def refresh_property_editor() -> None:
+    """Repaint the property editor.
+
+    The property editor doesn't repaint properties that are changed from within `onChanged`, so
+    the old values are shown until the mouse hovers over them.
+    """
+    if not fc.GuiUp:
+        return
+
+    # The PySide library is provided by FreeCAD and its path is platform dependent,
+    # so it cannot be analyzed by mypy.
+    from PySide import QtCore, QtGui  # type: ignore[import-not-found]
+
+    def repaint() -> None:
+        for widget in fcg.getMainWindow().findChildren(QtGui.QAbstractItemView):
+            if widget.metaObject().className() == "Gui::PropertyEditor::PropertyEditor":
+                widget.viewport().update()
+
+    # Wait until the property editor is done handling the current change
+    QtCore.QTimer.singleShot(0, repaint)
+
+
 unitmm = fc.Units.Quantity("1 mm")
 
 

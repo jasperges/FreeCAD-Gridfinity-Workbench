@@ -150,6 +150,28 @@ class TestVolumes(TestWithDocument):
         obj.recompute()
         self.assertAlmostEqual(obj.Shape.Volume, 286724.9489979051)
 
+    def test_bin_blank_refined_holes(self) -> None:
+        fcg.Command.get("CreateBinBlank").run()
+        obj = fcg.ActiveDocument.ActiveObject.Object
+        obj.MagnetHolesShape = "Refined"
+        obj.recompute()
+        self.assertTrue(obj.Shape.isValid())
+        self.assertEqual(len(obj.Shape.Solids), 1)
+        self.assertAlmostEqual(obj.Shape.Volume, 287015.68593231344)
+
+    def test_bin_refined_holes_size_per_shape(self) -> None:
+        fcg.Command.get("CreateBinBlank").run()
+        obj = fcg.ActiveDocument.ActiveObject.Object
+        obj.MagnetHolesShape = "Refined"
+        self.assertAlmostEqual(obj.MagnetHoleDiameter.Value, 5.86)
+        self.assertAlmostEqual(obj.MagnetHoleDepth.Value, 1.9)
+        obj.MagnetHoleDiameter = 5.9
+        obj.MagnetHolesShape = "Round"
+        self.assertAlmostEqual(obj.MagnetHoleDiameter.Value, 6.2)
+        self.assertAlmostEqual(obj.MagnetHoleDepth.Value, 2.4)
+        obj.MagnetHolesShape = "Refined"
+        self.assertAlmostEqual(obj.MagnetHoleDiameter.Value, 5.9)
+
     def test_bin_base(self) -> None:
         fcg.Command.get("CreateBinBase").run()
         obj = fcg.ActiveDocument.ActiveObject.Object
