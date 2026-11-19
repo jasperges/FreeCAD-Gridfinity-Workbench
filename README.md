@@ -27,6 +27,8 @@ Select the Property view tab on the bottom right and change the values. Hit ente
 |**Parts Bin**|**Bin Base**|
 |![](/Assets/Images/Bins/parts_bin.png)|![](/Assets/Images/Bins/bin_base.png)|
 
+The **Cable Organizer** is based on [Gridfinity Cable Organizing Boxes](https://www.thingiverse.com/thing:6748502) by [Dead_Pixel](https://www.thingiverse.com/dead_pixel), licensed under [CC BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
 ### Bottoms
 |Screw and Magnet Bottom|Magnet Bottom|
 |:-------:|:-------:|

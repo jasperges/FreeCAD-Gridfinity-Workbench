@@ -168,6 +168,15 @@ class CreateEcoBin(CreateCommand):
         )
 
 
+class CreateCableOrganizer(CreateCommand):
+    def __init__(self) -> None:
+        super().__init__(
+            name="CableOrganizer",
+            gridfinity_function=features.CableOrganizer,
+            pixmap=ICONDIR / "cable_organizer.svg",
+        )
+
+
 class CreatePartsBin(CreateCommand):
     def __init__(self) -> None:
         super().__init__(

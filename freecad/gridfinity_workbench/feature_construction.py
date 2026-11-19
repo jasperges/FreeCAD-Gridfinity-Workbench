@@ -1170,6 +1170,19 @@ def make_bin_bottom_holes(
         )
         shape = shape.fuse(remove_channel)
 
+    return place_at_hole_positions(obj, shape, layout)
+
+
+def place_at_hole_positions(
+    obj: fc.DocumentObject,
+    shape: Part.Shape,
+    layout: GridfinityLayout,
+) -> Part.Shape:
+    """Copy a shape made for a single grid cell to the cells of the layout.
+
+    The shape is centered on the grid cell. With `OnlyCorners` enabled only the parts of the shape
+    in the outer corners of the bin are kept.
+    """
     if obj.OnlyCorners:
         shape = _copy_to_outer_corners(obj, shape, layout)
     else:

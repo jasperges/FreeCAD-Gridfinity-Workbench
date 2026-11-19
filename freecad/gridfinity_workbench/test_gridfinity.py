@@ -18,6 +18,7 @@ SIMPLE_COMMANDS = [
     "CreateSimpleStorageBin",
     "CreateEcoBin",
     "CreatePartsBin",
+    "CreateCableOrganizer",
     "CreateBaseplate",
     "CreateMagnetBaseplate",
     "CreateScrewTogetherBaseplate",
@@ -204,6 +205,26 @@ class TestVolumes(TestWithDocument):
         obj.MagnetHoles = False
         obj.recompute()
         self.assertAlmostEqual(obj.Shape.Volume, 24728.976287436377)
+
+    def test_cable_organizer(self) -> None:
+        fcg.Command.get("CreateCableOrganizer").run()
+        obj = fcg.ActiveDocument.ActiveObject.Object
+        self.assertTrue(obj.Shape.isValid())
+        self.assertEqual(len(obj.Shape.Solids), 1)
+        self.assertAlmostEqual(obj.Shape.Volume, 39079.2656494449)
+        obj.MagnetHoles = False
+        obj.recompute()
+        self.assertAlmostEqual(obj.Shape.Volume, 36171.04232892958)
+
+    def test_cable_organizer_refined_only_corners(self) -> None:
+        fcg.Command.get("CreateCableOrganizer").run()
+        obj = fcg.ActiveDocument.ActiveObject.Object
+        obj.MagnetHolesShape = "Refined"
+        obj.OnlyCorners = True
+        obj.recompute()
+        self.assertTrue(obj.Shape.isValid())
+        self.assertEqual(len(obj.Shape.Solids), 1)
+        self.assertAlmostEqual(obj.Shape.Volume, 36732.855138174695)
 
     def test_baseplate(self) -> None:
         fcg.Command.get("CreateBaseplate").run()

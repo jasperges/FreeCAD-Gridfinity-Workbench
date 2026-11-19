@@ -8,7 +8,15 @@ import FreeCAD as fc  # noqa: N813
 import Part
 
 from . import baseplate_feature_construction as baseplate_feat
-from . import check_version, const, grid_initial_layout, label_shelf, magnet_hole, utils
+from . import (
+    cable_organizer,
+    check_version,
+    const,
+    grid_initial_layout,
+    label_shelf,
+    magnet_hole,
+    utils,
+)
 from . import feature_construction as feat
 from .custom_shape_features import (
     clean_up_layout,
@@ -334,6 +342,71 @@ class EcoBin(FoundationGridfinity):
 
         if obj.LabelShelfStyle != "Off":
             fuse_total = fuse_total.fuse(feat.make_label_shelf(obj, "eco"))
+
+        return fuse_total.removeSplitter()
+
+
+class CableOrganizer(FoundationGridfinity):
+    """Bin with an open bottom and dividers with a notch to hold cables."""
+
+    def __init__(self, obj: fc.DocumentObject) -> None:
+        super().__init__(obj)
+
+        grid_initial_layout.rectangle_layout_properties(obj, baseplate_default=False)
+        feat.bin_solid_mid_section_properties(
+            obj,
+            default_height_units=const.CABLE_HEIGHT_UNITS,
+            default_wall_thickness=const.CABLE_WALL_THICKNESS,
+        )
+        feat.stacking_lip_properties(obj, stacking_lip_default=False)
+        feat.bin_bottom_holes_properties(obj, magnet_holes_default=const.MAGNET_HOLES)
+        feat.bin_base_values_properties(obj)
+        cable_organizer.add_properties(obj)
+
+    def generate_gridfinity_shape(self, obj: fc.DocumentObject) -> Part.Shape:
+        layout = grid_initial_layout.make_rectangle_layout(obj)
+
+        bin_outside_shape = utils.create_rounded_rectangle(
+            obj.xTotalWidth,
+            obj.yTotalWidth,
+            0,
+            obj.BinOuterRadius,
+        )
+        bin_outside_shape.translate(
+            fc.Vector(obj.xTotalWidth / 2 + obj.Clearance, obj.yTotalWidth / 2 + obj.Clearance),
+        )
+
+        solid = feat.make_bin_solid_mid_section(obj, bin_outside_shape)
+        solid = solid.fuse(feat.make_complex_bin_base(obj, layout))
+        fuse_total = solid.cut(cable_organizer.make_open_bottom_cavity(obj, layout))
+
+        hole_pads = cable_organizer.make_hole_pads(obj, layout)
+        inner_parts = [
+            part
+            for part in (
+                cable_organizer.make_dividers(obj),
+                hole_pads,
+                cable_organizer.make_top_covers(obj),
+            )
+            if part is not None
+        ]
+        if inner_parts:
+            fuse_total = fuse_total.fuse(utils.multi_fuse(inner_parts).common(solid))
+
+        if obj.StackingLip:
+            fuse_total = fuse_total.fuse(feat.make_stacking_lip(obj, bin_outside_shape))
+
+        fuse_total = fuse_total.cut(cable_organizer.make_notch(obj))
+
+        if obj.ScrewHoles or obj.MagnetHoles:
+            fuse_total = fuse_total.cut(feat.make_bin_bottom_holes(obj, layout))
+
+        # Add the lattice after the holes, so magnet remove channels don't cut through it
+        if obj.BottomLattice:
+            lattice = cable_organizer.make_bottom_lattice(obj, layout)
+            if hole_pads is not None:
+                lattice = lattice.cut(hole_pads)
+            fuse_total = fuse_total.fuse(lattice.common(solid))
 
         return fuse_total.removeSplitter()
 
